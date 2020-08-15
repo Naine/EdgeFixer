@@ -134,7 +134,6 @@
     <ClCompile Include="vsplugin.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="avisynth_2.6.h" />
     <ClInclude Include="edgefixer.h" />
     <ClInclude Include="VapourSynth.h" />
     <ClInclude Include="VSHelper.h" />
