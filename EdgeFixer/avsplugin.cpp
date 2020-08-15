@@ -7,24 +7,6 @@ extern "C" {
 }
 
 const AVS_Linkage *AVS_linkage;
-bool g_avisynth_plus;
-
-bool is_avisynth_plus()
-{
-	VideoInfo vi = VideoInfo();
-	vi.pixel_type = -536805376; // CS_Y16
-	return vi.BitsPerPixel() == 16;
-}
-
-int component_size(const VideoInfo &vi)
-{
-	return g_avisynth_plus ? vi.ComponentSize() : 1;
-}
-
-int bits_per_component(const VideoInfo &vi)
-{
-	return g_avisynth_plus ? vi.BitsPerComponent() : 8;
-}
 
 class ContinuityFixer: public GenericVideoFilter {
 	int m_left;
@@ -42,13 +24,13 @@ public:
 		PVideoFrame frame = child->GetFrame(n, env);
 		env->MakeWritable(&frame);
 
-		int width = frame->GetRowSize() / component_size(vi);
+		int width = frame->GetRowSize() / vi.ComponentSize();
 		int height = frame->GetHeight();
 		int stride = frame->GetPitch();
-		int step = component_size(vi);
+		int step = vi.ComponentSize();
 
-		size_t (*required_buffer)(int) = component_size(vi) == 2 ? edgefixer_required_buffer_w : edgefixer_required_buffer_b;
-		void (*process_edge)(void *, const void *, int, int, int, int, void *) = component_size(vi) == 2 ? edgefixer_process_edge_w : edgefixer_process_edge_b;
+		size_t (*required_buffer)(int) = vi.ComponentSize() == 2 ? edgefixer_required_buffer_w : edgefixer_required_buffer_b;
+		void (*process_edge)(void *, const void *, int, int, int, int, void *) = vi.ComponentSize() == 2 ? edgefixer_process_edge_w : edgefixer_process_edge_b;
 
 		void *tmp = malloc(required_buffer(width > height ? width : height));
 		if (!tmp)
@@ -103,13 +85,13 @@ public:
 		PVideoFrame frame = child->GetFrame(n, env);
 		env->MakeWritable(&frame);
 
-		int width = frame->GetRowSize() / component_size(vi);
+		int width = frame->GetRowSize() / vi.ComponentSize();
 		int height = frame->GetHeight();
 		int stride = frame->GetPitch();
-		int step = component_size(vi);
+		int step = vi.ComponentSize();
 
-		size_t (*required_buffer)(int) = component_size(vi) == 2 ? edgefixer_required_buffer_w : edgefixer_required_buffer_b;
-		void (*process_edge)(void *, const void *, int, int, int, int, void *) = component_size(vi) == 2 ? edgefixer_process_edge_w : edgefixer_process_edge_b;
+		size_t (*required_buffer)(int) = vi.ComponentSize() == 2 ? edgefixer_required_buffer_w : edgefixer_required_buffer_b;
+		void (*process_edge)(void *, const void *, int, int, int, int, void *) = vi.ComponentSize() == 2 ? edgefixer_process_edge_w : edgefixer_process_edge_b;
 
 		void *tmp = malloc(required_buffer(width > height ? width : height));
 		if (!tmp)
@@ -149,8 +131,8 @@ AVSValue __cdecl Create_ContinuityFixer(AVSValue args, void *user_data, IScriptE
 {
 	if (!args[0].AsClip()->GetVideoInfo().IsPlanar())
 		env->ThrowError("[ContinuityFixer] input clip must be planar");
-	if (component_size(args[0].AsClip()->GetVideoInfo()) > 2)
-		env->ThrowError("[ContinuityFixer] input clip must be BYTE or WORD");
+	if (args[0].AsClip()->GetVideoInfo().ComponentSize() > 2)
+		env->ThrowError("[ContinuityFixer] input clip must be at most 16-bit");
 
 	return new ContinuityFixer(args[0].AsClip(), args[1].AsInt(0), args[2].AsInt(0), args[3].AsInt(0), args[4].AsInt(0), args[5].AsInt(0));
 }
@@ -161,9 +143,9 @@ AVSValue __cdecl Create_ReferenceFixer(AVSValue args, void *user_data, IScriptEn
 		env->ThrowError("[ReferenceFixer] clips must be planar");
 	if (args[0].AsClip()->GetVideoInfo().width != args[1].AsClip()->GetVideoInfo().width || args[0].AsClip()->GetVideoInfo().height != args[1].AsClip()->GetVideoInfo().height)
 		env->ThrowError("[ReferenceFixer] clips must have same dimensions");
-	if (component_size(args[0].AsClip()->GetVideoInfo()) > 2 || component_size(args[1].AsClip()->GetVideoInfo()) > 2)
-		env->ThrowError("[ReferenceFixer] clips must be BYTE or WORD");
-	if (bits_per_component(args[0].AsClip()->GetVideoInfo()) != bits_per_component(args[1].AsClip()->GetVideoInfo()))
+	if (args[0].AsClip()->GetVideoInfo().ComponentSize() > 2 || args[1].AsClip()->GetVideoInfo().ComponentSize() > 2)
+		env->ThrowError("[ReferenceFixer] clips must be at most 16-bit");
+	if (args[0].AsClip()->GetVideoInfo().BitsPerComponent() != args[1].AsClip()->GetVideoInfo().BitsPerComponent())
 		env->ThrowError("[ReferenceFixer] clips must have same bit depth");
 
 	return new ReferenceFixer(args[0].AsClip(), args[1].AsClip(), args[2].AsInt(0), args[3].AsInt(0), args[4].AsInt(0), args[5].AsInt(0), args[6].AsInt(0));
@@ -173,7 +155,6 @@ extern "C" __declspec(dllexport)
 const char * __stdcall AvisynthPluginInit3(IScriptEnvironment *env, const AVS_Linkage *const vectors)
 {
 	AVS_linkage = vectors;
-	g_avisynth_plus = is_avisynth_plus();
 
 	env->AddFunction("ContinuityFixer", "c[left]i[top]i[right]i[bottom]i[radius]i", Create_ContinuityFixer, NULL);
 	env->AddFunction("ReferenceFixer", "cc[left]i[top]i[right]i[bottom]i[radius]i", Create_ReferenceFixer, NULL);
