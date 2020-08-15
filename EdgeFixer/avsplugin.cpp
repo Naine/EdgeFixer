@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <Windows.h>
 #include <avisynth.h>
 
 extern "C" {
