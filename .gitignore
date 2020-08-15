@@ -8,3 +8,4 @@ x64
 *.o
 *.obj
 *.VC.db
+*.user
