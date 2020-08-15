@@ -23,13 +23,13 @@ public:
 		PVideoFrame frame = child->GetFrame(n, env);
 		env->MakeWritable(&frame);
 
-		int width = frame->GetRowSize() / vi.ComponentSize();
+		int step = vi.ComponentSize();
+		int width = frame->GetRowSize() / step;
 		int height = frame->GetHeight();
 		int stride = frame->GetPitch();
-		int step = vi.ComponentSize();
 
-		size_t (*required_buffer)(int) = vi.ComponentSize() == 2 ? edgefixer_required_buffer_w : edgefixer_required_buffer_b;
-		void (*process_edge)(void *, const void *, int, int, int, int, void *) = vi.ComponentSize() == 2 ? edgefixer_process_edge_w : edgefixer_process_edge_b;
+		size_t (*required_buffer)(int) = step == 2 ? edgefixer_required_buffer_w : edgefixer_required_buffer_b;
+		void (*process_edge)(void *, const void *, int, int, int, int, void *) = step == 2 ? edgefixer_process_edge_w : edgefixer_process_edge_b;
 
 		void *tmp = malloc(required_buffer(width > height ? width : height));
 		if (!tmp)
@@ -84,13 +84,13 @@ public:
 		PVideoFrame frame = child->GetFrame(n, env);
 		env->MakeWritable(&frame);
 
-		int width = frame->GetRowSize() / vi.ComponentSize();
+		int step = vi.ComponentSize();
+		int width = frame->GetRowSize() / step;
 		int height = frame->GetHeight();
 		int stride = frame->GetPitch();
-		int step = vi.ComponentSize();
 
-		size_t (*required_buffer)(int) = vi.ComponentSize() == 2 ? edgefixer_required_buffer_w : edgefixer_required_buffer_b;
-		void (*process_edge)(void *, const void *, int, int, int, int, void *) = vi.ComponentSize() == 2 ? edgefixer_process_edge_w : edgefixer_process_edge_b;
+		size_t (*required_buffer)(int) = step == 2 ? edgefixer_required_buffer_w : edgefixer_required_buffer_b;
+		void (*process_edge)(void *, const void *, int, int, int, int, void *) = step == 2 ? edgefixer_process_edge_w : edgefixer_process_edge_b;
 
 		void *tmp = malloc(required_buffer(width > height ? width : height));
 		if (!tmp)
