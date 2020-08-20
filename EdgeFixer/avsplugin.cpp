@@ -128,26 +128,32 @@ public:
 
 AVSValue __cdecl Create_ContinuityFixer(AVSValue args, void *user_data, IScriptEnvironment *env)
 {
-	if (!args[0].AsClip()->GetVideoInfo().IsPlanar())
+	PClip clip = args[0].AsClip();
+	const VideoInfo& vi = clip->GetVideoInfo();
+	if (!vi.IsPlanar())
 		env->ThrowError("[ContinuityFixer] input clip must be planar");
-	if (args[0].AsClip()->GetVideoInfo().ComponentSize() > 2)
+	if (vi.ComponentSize() > 2)
 		env->ThrowError("[ContinuityFixer] input clip must be at most 16-bit");
 
-	return new ContinuityFixer(args[0].AsClip(), args[1].AsInt(0), args[2].AsInt(0), args[3].AsInt(0), args[4].AsInt(0), args[5].AsInt(0));
+	return new ContinuityFixer(clip, args[1].AsInt(0), args[2].AsInt(0), args[3].AsInt(0), args[4].AsInt(0), args[5].AsInt(0));
 }
 
 AVSValue __cdecl Create_ReferenceFixer(AVSValue args, void *user_data, IScriptEnvironment *env)
 {
-	if (!args[0].AsClip()->GetVideoInfo().IsPlanar() || !args[1].AsClip()->GetVideoInfo().IsPlanar())
+	PClip clip1 = args[0].AsClip();
+	PClip clip2 = args[1].AsClip();
+	const VideoInfo& vi1 = clip1->GetVideoInfo();
+	const VideoInfo& vi2 = clip2->GetVideoInfo();
+	if (!vi1.IsPlanar() || !vi2.IsPlanar())
 		env->ThrowError("[ReferenceFixer] clips must be planar");
-	if (args[0].AsClip()->GetVideoInfo().width != args[1].AsClip()->GetVideoInfo().width || args[0].AsClip()->GetVideoInfo().height != args[1].AsClip()->GetVideoInfo().height)
+	if (vi1.width != vi2.width || vi1.height != vi2.height)
 		env->ThrowError("[ReferenceFixer] clips must have same dimensions");
-	if (args[0].AsClip()->GetVideoInfo().ComponentSize() > 2 || args[1].AsClip()->GetVideoInfo().ComponentSize() > 2)
+	if (vi1.ComponentSize() > 2 || vi2.ComponentSize() > 2)
 		env->ThrowError("[ReferenceFixer] clips must be at most 16-bit");
-	if (args[0].AsClip()->GetVideoInfo().BitsPerComponent() != args[1].AsClip()->GetVideoInfo().BitsPerComponent())
+	if (vi1.BitsPerComponent() != vi2.BitsPerComponent())
 		env->ThrowError("[ReferenceFixer] clips must have same bit depth");
 
-	return new ReferenceFixer(args[0].AsClip(), args[1].AsClip(), args[2].AsInt(0), args[3].AsInt(0), args[4].AsInt(0), args[5].AsInt(0), args[6].AsInt(0));
+	return new ReferenceFixer(clip1, clip2, args[2].AsInt(0), args[3].AsInt(0), args[4].AsInt(0), args[5].AsInt(0), args[6].AsInt(0));
 }
 
 extern "C" __declspec(dllexport)
